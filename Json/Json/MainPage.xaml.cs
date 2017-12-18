@@ -8,6 +8,8 @@ using System.IO;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
+using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace Json
 {
@@ -87,12 +89,15 @@ namespace Json
 
         private async void Serch_Click(object sender, EventArgs e)
         {
+            var layout2 = new StackLayout { HorizontalOptions = LayoutOptions.CenterAndExpand, VerticalOptions = LayoutOptions.CenterAndExpand };
+            var scroll = new ScrollView { Orientation = ScrollOrientation.Vertical };
+            layout2.Children.Add(scroll);
             var layout = new StackLayout { HorizontalOptions = LayoutOptions.CenterAndExpand, VerticalOptions = LayoutOptions.CenterAndExpand };
+            scroll.Content = layout;
 
             string isbncode = isbn.Text;
             requestUrl = url + "&isbn=" + isbncode;    //URLにISBNコードを挿入
 
-            /*
             //-------------------------------------ボタン再配置--------------------------
             isbn = new Entry    //EntryでISBNコードを入力
             {
@@ -111,7 +116,7 @@ namespace Json
             layout.Children.Add(Serch);
             Serch.Clicked += Serch_Click;
             //-------------------------------------ボタン再配置--------------------------
-            */
+            
 
             /*
             //HTTPアクセス //書き方が古いらしい
@@ -120,36 +125,27 @@ namespace Json
             HttpWebResponse res = req.GetResponseAsync();
             */
 
-            /*
-            // HTTPアクセス 
-            var req = WebRequest.Create(requestUrl);
-            var res = req.GetResponseAsync();
-
-            // レスポンス(JSON)をオブジェクトに変換 
-            Stream s = GetMemoryStream(res);
-            StreamReader sr = new StreamReader(s);
-            string str = sr.ReadToEnd();
-            */
-
             //HTTPアクセスメソッドを呼び出す
             string APIdata = await GetApiAsync();
 
-            //この辺よく分からん
+            //レスポンス(JSON)をオブジェクトに変換 
             Stream s = GetMemoryStream(APIdata);
             StreamReader sr = new StreamReader(s);
-            string str = sr.ReadToEnd();
+            string json = sr.ReadToEnd();
 
-            //layout.Children.Add(new Label { Text = str }); //JSON形式で書き出す
+            //layout.Children.Add(new Label { Text = json }); //JSON形式で書き出す
 
-            var info = JsonConvert.DeserializeObject<RakutenBooks>(str); //JSON形式から戻す…戻したい 
-            foreach (var r in info.Items)
+            //デシリアライズ
+            var deserialize = JsonConvert.DeserializeObject<RakutenBooks>(json);
+            foreach (var r in deserialize.Items)
             {
                 layout.Children.Add(new Label { Text = $"title: { r.title }" });
+
                 layout.Children.Add(new Label { Text = $"titleKana: { r.titleKana }" });
             };
             layout.Children.Add(new Label { Text = "読み取り終了",TextColor = Color.Black });
 
-            Content = layout;
+            Content = layout2;
         }
 
         //HTTPアクセスメソッド

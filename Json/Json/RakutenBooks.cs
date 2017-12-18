@@ -1,5 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
+using System;
+using Newtonsoft.Json.Linq;
+using System.Linq;
 
 namespace Json
 {
@@ -91,7 +94,7 @@ namespace Json
         }
     }
     */
-
+    //[JsonConverter(typeof())]
     public class RakutenBooks
     {
         
@@ -176,5 +179,32 @@ namespace Json
             
             public string booksGenreId { get; set; }
         }
+
+        /*
+        public class ItemsConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType) => objectType == typeof(List<Item>);
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                return serializer.Deserialize<JObject>(reader).Properties().Select(p =>
+
+                {
+
+                    var Item = p.Value.ToObject<Item>();
+
+                    Item.title = p.;
+
+                    return Item;
+
+                }).ToList();
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+        }
+        */
     }
 }

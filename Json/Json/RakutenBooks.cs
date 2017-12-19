@@ -1,12 +1,9 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
-using System;
-using Newtonsoft.Json.Linq;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Json
 {
-    /*
+    
     [DataContract]
     public class RakutenBooks
     {
@@ -93,8 +90,9 @@ namespace Json
             public string booksGenreId { get; set; }
         }
     }
-    */
-    //[JsonConverter(typeof())]
+    
+
+    /*
     public class RakutenBooks
     {
         
@@ -179,6 +177,7 @@ namespace Json
             
             public string booksGenreId { get; set; }
         }
+        */
 
         /*
         public class ItemsConverter : JsonConverter
@@ -206,5 +205,5 @@ namespace Json
             }
         }
         */
-    }
+    
 }

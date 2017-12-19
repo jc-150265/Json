@@ -64,14 +64,14 @@ namespace Json
 
             isbn = new Entry    //EntryでISBNコードを入力
             {
-                Placeholder = "ISBNコードを入力",
-                PlaceholderColor = Color.Gray,
+                /*Placeholder = "ISBNコードを入力",
+                PlaceholderColor = Color.Gray,*/
+                Text = "9784838729036", //面倒だからTextでISBN設定
                 WidthRequest = 170
             };
             layout.Children.Add(isbn);
 
-            //string requestUrl = url + "&isbn=" + 9784046022257;    //URLにISBNコードを挿入
-            //https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404?format=json&applicationId=1051637750796067320&isbn=9784838729036
+            //実行url https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404?format=json&applicationId=1051637750796067320&isbn=9784838729036
 
 
 
@@ -89,63 +89,81 @@ namespace Json
 
         private async void Serch_Click(object sender, EventArgs e)
         {
-            var layout2 = new StackLayout { HorizontalOptions = LayoutOptions.CenterAndExpand, VerticalOptions = LayoutOptions.CenterAndExpand };
-            var scroll = new ScrollView { Orientation = ScrollOrientation.Vertical };
-            layout2.Children.Add(scroll);
-            var layout = new StackLayout { HorizontalOptions = LayoutOptions.CenterAndExpand, VerticalOptions = LayoutOptions.CenterAndExpand };
-            scroll.Content = layout;
-
-            string isbncode = isbn.Text;
-            requestUrl = url + "&isbn=" + isbncode;    //URLにISBNコードを挿入
-
-            //-------------------------------------ボタン再配置--------------------------
-            isbn = new Entry    //EntryでISBNコードを入力
+            try
             {
-                Placeholder = "ISBNコードを入力",
-                PlaceholderColor = Color.Gray,
-                WidthRequest = 170
-            };
-            layout.Children.Add(isbn);
+                var layout2 = new StackLayout { HorizontalOptions = LayoutOptions.CenterAndExpand, VerticalOptions = LayoutOptions.CenterAndExpand };
+                var scroll = new ScrollView { Orientation = ScrollOrientation.Vertical };
+                layout2.Children.Add(scroll);
+                var layout = new StackLayout { HorizontalOptions = LayoutOptions.CenterAndExpand, VerticalOptions = LayoutOptions.CenterAndExpand };
+                scroll.Content = layout;
 
-            var Serch = new Button
-            {
-                WidthRequest = 60,
-                Text = "Serch!",
-                TextColor = Color.Red,
-            };
-            layout.Children.Add(Serch);
-            Serch.Clicked += Serch_Click;
-            //-------------------------------------ボタン再配置--------------------------
-            
+                string isbncode = isbn.Text;
+                requestUrl = url + "&isbn=" + isbncode;    //URLにISBNコードを挿入
 
-            /*
-            //HTTPアクセス //書き方が古いらしい
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(requestUrl);
-            req.Method = "GET";
-            HttpWebResponse res = req.GetResponseAsync();
-            */
+                //------------------------------ボタン再配置--------------------------
+                isbn = new Entry    //EntryでISBNコードを入力
+                {
+                    /*Placeholder = "ISBNコードを入力",
+                    PlaceholderColor = Color.Gray,*/
+                    Text = "9784838729036", //面倒だからTextでISBN設定
+                    WidthRequest = 170
+                };
+                layout.Children.Add(isbn);
 
-            //HTTPアクセスメソッドを呼び出す
-            string APIdata = await GetApiAsync();
+                var Serch = new Button
+                {
+                    WidthRequest = 60,
+                    Text = "Serch!",
+                    TextColor = Color.Red,
+                };
+                layout.Children.Add(Serch);
+                Serch.Clicked += Serch_Click;
+                //-------------------------------ボタン再配置--------------------------
 
-            //レスポンス(JSON)をオブジェクトに変換 
-            Stream s = GetMemoryStream(APIdata);
-            StreamReader sr = new StreamReader(s);
-            string json = sr.ReadToEnd();
+                //HTTPアクセスメソッドを呼び出す
+                string APIdata = await GetApiAsync();
 
-            //layout.Children.Add(new Label { Text = json }); //JSON形式で書き出す
+                //レスポンス(JSON)をオブジェクトに変換 
+                Stream s = GetMemoryStream(APIdata);
+                StreamReader sr = new StreamReader(s);
+                string json = sr.ReadToEnd();
 
-            //デシリアライズ
-            var deserialize = JsonConvert.DeserializeObject<RakutenBooks>(json);
-            foreach (var r in deserialize.Items)
-            {
-                layout.Children.Add(new Label { Text = $"title: { r.title }" });
+                //デシリアライズ
+                var rakutenBooks = JsonConvert.DeserializeObject<RakutenBooks>(json);
+                var item = JsonConvert.DeserializeObject<RakutenBooks.Item>(json);
 
-                layout.Children.Add(new Label { Text = $"titleKana: { r.titleKana }" });
-            };
-            layout.Children.Add(new Label { Text = "読み取り終了",TextColor = Color.Black });
+                /*
+                //jsonオブジェクトにする
+                //http://d.hatena.ne.jp/androidprogram/20100622/1277229166
+                var root = GetJSONObject(json);
+                var items = GetJsonArray("Items");
+                */
 
-            Content = layout2;
+
+                //layout.Children.Add(new Label { Text = $" {items}" });
+                //layout.Children.Add(new Label { Text = $" {items.Title}" });
+
+                //結果を出力
+                foreach (var r in rakutenBooks.Items)
+                {
+                    layout.Children.Add(new Label { Text = $"title: { r.title }" });
+
+                    layout.Children.Add(new Label { Text = $"titleKana: { r.titleKana }" });
+                };
+
+                foreach (var r in rakutenBooks.Items)
+                    layout.Children.Add(new Label { Text = $"title: {r.title}" });
+
+                layout.Children.Add(new Label { Text = "読み取り終了", TextColor = Color.Black });
+
+                layout.Children.Add(new Label { Text = "" });//改行
+
+                layout.Children.Add(new Label { Text = "JSON形式で書き出す", TextColor = Color.Red });
+                layout.Children.Add(new Label { Text = json });
+
+                Content = layout2;
+            }
+            catch (Exception x) { string a = x.ToString(); }
         }
 
         //HTTPアクセスメソッド
@@ -157,6 +175,7 @@ namespace Json
                 try
                 {
                     string urlContents = await client.GetStringAsync(APIurl);
+                    await Task.Delay(1000); //1秒待つ(楽天API規約に違反するため)
                     return urlContents;
                 }
                 catch (Exception e)
@@ -170,6 +189,18 @@ namespace Json
         {
             string a = text;
             return new MemoryStream(Encoding.UTF8.GetBytes(a));
+        }
+
+        public JsonObjectAttribute GetJSONObject(String json)
+        {
+            JsonObjectAttribute rootObject = GetJSONObject(json);
+            return rootObject;
+
+        }
+        public JsonArrayAttribute GetJsonArray(string name)
+        {
+            JsonArrayAttribute itemArray = GetJsonArray(name);
+            return itemArray;
         }
     }
 }

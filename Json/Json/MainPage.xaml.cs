@@ -57,24 +57,21 @@ namespace Json
         {
             InitializeComponent();
 
-
-            url = "https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404?format=json&applicationId=1051637750796067320";
+            url = "https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404?format=json&applicationId=1051637750796067320&formatVersion=2"; //formatVersion=2にした
 
             var layout = new StackLayout { HorizontalOptions = LayoutOptions.CenterAndExpand, VerticalOptions = LayoutOptions.CenterAndExpand };
 
             isbn = new Entry    //EntryでISBNコードを入力
             {
-                /*Placeholder = "ISBNコードを入力",
-                PlaceholderColor = Color.Gray,*/
+                //Placeholder = "ISBNコードを入力",
+                //PlaceholderColor = Color.Gray,
                 Text = "9784838729036", //面倒だからTextでISBN設定
                 WidthRequest = 170
             };
             layout.Children.Add(isbn);
 
-            //実行url https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404?format=json&applicationId=1051637750796067320&isbn=9784838729036
-
-
-
+            //実行url https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404?format=json&applicationId=1051637750796067320&formatVersion=2&isbn=9784838729036
+            
             var Serch = new Button
             {
                 WidthRequest = 60,
@@ -87,6 +84,7 @@ namespace Json
             Content = layout;
         }
 
+        //--------------------------------Serchボタンイベントハンドラ-----------------------------------
         private async void Serch_Click(object sender, EventArgs e)
         {
             try
@@ -98,7 +96,7 @@ namespace Json
                 scroll.Content = layout;
 
                 string isbncode = isbn.Text;
-                requestUrl = url + "&isbn=" + isbncode;    //URLにISBNコードを挿入
+                requestUrl = url + "&isbn=" + isbncode; //URLにISBNコードを挿入
 
                 //------------------------------ボタン再配置--------------------------
                 isbn = new Entry    //EntryでISBNコードを入力
@@ -121,49 +119,61 @@ namespace Json
                 //-------------------------------ボタン再配置--------------------------
 
                 //HTTPアクセスメソッドを呼び出す
-                string APIdata = await GetApiAsync();
-
-                //レスポンス(JSON)をオブジェクトに変換 
-                Stream s = GetMemoryStream(APIdata);
-                StreamReader sr = new StreamReader(s);
-                string json = sr.ReadToEnd();
-
-                //デシリアライズ
-                var rakutenBooks = JsonConvert.DeserializeObject<RakutenBooks>(json);
-                var item = JsonConvert.DeserializeObject<RakutenBooks.Item>(json);
+                string APIdata = await GetApiAsync(); //jsonをstringで受け取る
+                
+                //HTTPアクセス失敗処理(404エラーとか名前解決失敗とかタイムアウトとか)
+                if (APIdata is null)
+                {
+                    await DisplayAlert("警告","接続に失敗しました","OK");
+                }
 
                 /*
-                //jsonオブジェクトにする
-                //http://d.hatena.ne.jp/androidprogram/20100622/1277229166
-                var root = GetJSONObject(json);
-                var items = GetJsonArray("Items");
+                //レスポンス(JSON)をstringに変換-------------->しなくていい
+                Stream s = GetMemoryStream(APIdata); //GetMemoryStreamメソッド呼び出し
+                StreamReader sr = new StreamReader(s);
+                string json = sr.ReadToEnd();
+                */
+                /*
+                //デシリアライズ------------------>しなくていい
+                var rakutenBooks = JsonConvert.DeserializeObject<RakutenBooks>(json.ToString());
                 */
 
-
-                //layout.Children.Add(new Label { Text = $" {items}" });
-                //layout.Children.Add(new Label { Text = $" {items.Title}" });
+                //パースする *重要*   パースとは、文法に従って分析する、品詞を記述する、構文解析する、などの意味を持つ英単語。
+                var json = JObject.Parse(APIdata); //stringのAPIdataをJObjectにパース
+                var Items = JArray.Parse(json["Items"].ToString()); //Itemsは配列なのでJArrayにパース
 
                 //結果を出力
-                foreach (var r in rakutenBooks.Items)
+                foreach (JObject jobj in Items)
                 {
-                    layout.Children.Add(new Label { Text = $"title: { r.title }" });
+                    //↓のように取り出す
+                    JValue titleValue = (JValue)jobj["title"];
+                    string title = (string)titleValue.Value;
 
-                    layout.Children.Add(new Label { Text = $"titleKana: { r.titleKana }" });
+                    JValue titleKanaValue = (JValue)jobj["titleKana"];
+                    string titleKana = (string)titleKanaValue.Value;
+
+                    JValue itemCaptionValue = (JValue)jobj["itemCaption"];
+                    string itemCaption = (string)itemCaptionValue.Value;
+                    
+                    //書き出し
+                    layout.Children.Add(new Label { Text = $"title: { title }" });
+                    layout.Children.Add(new Label { Text = $"titleKana: { titleKana }" });
+                    layout.Children.Add(new Label { Text = $"itemCaption: { itemCaption }" });
                 };
-
-                foreach (var r in rakutenBooks.Items)
-                    layout.Children.Add(new Label { Text = $"title: {r.title}" });
 
                 layout.Children.Add(new Label { Text = "読み取り終了", TextColor = Color.Black });
 
                 layout.Children.Add(new Label { Text = "" });//改行
 
+                /*
                 layout.Children.Add(new Label { Text = "JSON形式で書き出す", TextColor = Color.Red });
-                layout.Children.Add(new Label { Text = json });
+                layout.Children.Add(new Label { Text = json.ToString() }); layout.Children.Add(new Label { Text = "" });//改行
+                layout.Children.Add(new Label { Text = Items.ToString() });
+                */
 
                 Content = layout2;
             }
-            catch (Exception x) { string a = x.ToString(); }
+            catch (Exception x) { await DisplayAlert("警告", x.ToString(), "OK"); }
         }
 
         //HTTPアクセスメソッド
@@ -181,26 +191,14 @@ namespace Json
                 catch (Exception e)
                 {
                     string a = e.ToString();
-                    return a;
+                    return null;
                 }
         }
-        //何かしてるメソッド
+        //UTF-8エンコードメソッド ------------------>しなくていい
         public MemoryStream GetMemoryStream(string text)
         {
             string a = text;
             return new MemoryStream(Encoding.UTF8.GetBytes(a));
-        }
-
-        public JsonObjectAttribute GetJSONObject(String json)
-        {
-            JsonObjectAttribute rootObject = GetJSONObject(json);
-            return rootObject;
-
-        }
-        public JsonArrayAttribute GetJsonArray(string name)
-        {
-            JsonArrayAttribute itemArray = GetJsonArray(name);
-            return itemArray;
         }
     }
 }

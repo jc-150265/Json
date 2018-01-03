@@ -124,7 +124,7 @@ namespace Json
                 //HTTPアクセス失敗処理(404エラーとか名前解決失敗とかタイムアウトとか)
                 if (APIdata is null)
                 {
-                    await DisplayAlert("警告","接続に失敗しました","OK");
+                    await DisplayAlert("接続エラー","接続に失敗しました","OK");
                 }
 
                 /*
@@ -154,22 +154,25 @@ namespace Json
 
                     JValue itemCaptionValue = (JValue)jobj["itemCaption"];
                     string itemCaption = (string)itemCaptionValue.Value;
-                    
+
+                    JValue gazoValue = (JValue)jobj["largeImageUrl"];
+                    string gazo = (string)gazoValue.Value;
+
                     //書き出し
                     layout.Children.Add(new Label { Text = $"title: { title }" });
                     layout.Children.Add(new Label { Text = $"titleKana: { titleKana }" });
                     layout.Children.Add(new Label { Text = $"itemCaption: { itemCaption }" });
+                    layout.Children.Add(new Image { Source = gazo });
+                    String A = gazo;
+
                 };
 
                 layout.Children.Add(new Label { Text = "読み取り終了", TextColor = Color.Black });
 
                 layout.Children.Add(new Label { Text = "" });//改行
-
-                /*
+                
                 layout.Children.Add(new Label { Text = "JSON形式で書き出す", TextColor = Color.Red });
-                layout.Children.Add(new Label { Text = json.ToString() }); layout.Children.Add(new Label { Text = "" });//改行
-                layout.Children.Add(new Label { Text = Items.ToString() });
-                */
+                layout.Children.Add(new Label { Text = json.ToString() });
 
                 Content = layout2;
             }
